@@ -1,54 +1,13 @@
 import os
 import random
 import string
-import sys
-import argparse
+import threading
+import flet as ft
 
 def generate_random_name(length=8):
     """Generates a random name based on the specified length"""
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
-
-def rename_files_in_directory(target_folder, name_length=8, recursive=False, confirm=True):
-    """Renames all files in the target folder with random names"""
-    if not os.path.exists(target_folder):
-        print(f"Error: The folder '{target_folder}' does not exist.")
-        return 0, 0
-    
-    # Count files before asking for confirmation
-    file_count = sum(1 for _ in get_files_to_rename(target_folder, recursive))
-    
-    if confirm and file_count > 0:
-        user_input = input(f"This will rename {file_count} file(s) in '{target_folder}'. Continue? (y/n): ")
-        if user_input.lower() != 'y':
-            print("Operation cancelled.")
-            return 0, 0
-    
-    renamed_files = 0
-    errors = 0
-    
-    for full_path, file_name in get_files_to_rename(target_folder, recursive):
-        name, extension = os.path.splitext(file_name)
-        new_name = generate_random_name(name_length) + extension
-        new_full_path = os.path.join(os.path.dirname(full_path), new_name)
-
-        # Prevent potential name collisions
-        while os.path.exists(new_full_path):
-            new_name = generate_random_name(name_length) + extension
-            new_full_path = os.path.join(os.path.dirname(full_path), new_name)
-
-        try:
-            os.rename(full_path, new_full_path)
-            renamed_files += 1
-            print(f"File '{file_name}' renamed to '{new_name}'.")
-        except PermissionError:
-            print(f"Permission denied to rename the file '{file_name}'.")
-            errors += 1
-        except Exception as e:
-            print(f"Error renaming the file '{file_name}': {e}")
-            errors += 1
-    
-    return renamed_files, errors
 
 def get_files_to_rename(target_folder, recursive):
     """Generator that yields files to be renamed"""
@@ -62,38 +21,307 @@ def get_files_to_rename(target_folder, recursive):
             if os.path.isfile(full_path):
                 yield full_path, file_name
 
-def main():
-    parser = argparse.ArgumentParser(description="Rename files with random alphanumeric names.")
-    parser.add_argument("folders", nargs="*", help="Folders containing files to rename")
-    parser.add_argument("-l", "--length", type=int, default=8, help="Length of random names (default: 8)")
-    parser.add_argument("-r", "--recursive", action="store_true", help="Process subdirectories recursively")
-    parser.add_argument("-y", "--yes", action="store_true", help="Skip confirmation prompt")
+def main(page: ft.Page):
+    page.title = "Random File Renamer"
+    page.window_resizable = False
+    page.window.center()
+    page.theme_mode = "light"
+    page.padding = 30
+    page.window.height = 435
+    page.window.width = 550
     
-    args = parser.parse_args()
+    # Global variable for selected folder
+    selected_folder = r"C:\Users\jpagu\Pictures"
     
-    # If no folders provided, ask for input
-    folders = args.folders
-    if not folders:
-        folder_input = input("Enter folder paths separated by commas: ")
-        folders = [folder.strip() for folder in folder_input.split(",")]
+    # Create UI elements
+    title = ft.Text(
+        "Random File Renamer",
+        size=30,
+        font_family="Arial",
+        weight=ft.FontWeight.BOLD,
+        color=ft.Colors.TEAL_800,
+        text_align=ft.TextAlign.CENTER
+    )
     
-    total_renamed = 0
-    total_errors = 0
+    # Folder selection
+    folder_field = ft.TextField(
+        label="Select Folder",
+        hint_text="Click browse to select a folder",
+        width=250,
+        border_radius=10,
+        border_color=ft.Colors.TEAL_600,
+        focused_border_color=ft.Colors.TEAL_600,
+        read_only=True
+    )
     
-    for target_folder in folders:
-        renamed, errors = rename_files_in_directory(
-            target_folder, 
-            name_length=args.length,
-            recursive=args.recursive,
-            confirm=not args.yes
+    browse_button = ft.ElevatedButton(
+        text="Browse",
+        width=100,
+        height=40,
+        style=ft.ButtonStyle(
+            color=ft.Colors.WHITE,
+            bgcolor=ft.Colors.BLUE_600,
+            shape=ft.RoundedRectangleBorder(radius=8),
+        ),
+    )
+    
+
+    
+    # Recursive checkbox
+    recursive_checkbox = ft.Checkbox(
+        label="Include subfolders (recursive)",
+        value=False,
+        fill_color=ft.Colors.TEAL_600
+    )
+    
+    # Rename button
+    rename_button = ft.ElevatedButton(
+        text="Rename Files",
+        width=140,
+        height=50,
+        style=ft.ButtonStyle(
+            color=ft.Colors.WHITE,
+            bgcolor=ft.Colors.TEAL_600,
+            shape=ft.RoundedRectangleBorder(radius=10),
+        ),
+        disabled=True  # Disabled until folder is selected
+    )
+    
+    # File count info
+    file_count_text = ft.Text(
+        "No folder selected",
+        size=12,
+        color=ft.Colors.GREY_500,
+        text_align=ft.TextAlign.CENTER
+    )
+    
+    # Dialog functions
+    def close_dialog(dialog):
+        dialog.open = False
+        page.update()
+    
+    def show_success_dialog(renamed_count, error_count, folder_path):
+        success_dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Rename Operation Completed!", color=ft.Colors.GREEN_600),
+            content=ft.Column([
+                ft.Text(f"📁 Folder: {os.path.basename(folder_path)}"),
+                ft.Divider(),
+                ft.Text(f"✅ Files renamed: {renamed_count}", color=ft.Colors.GREEN_600),
+                ft.Text(f"❌ Errors: {error_count}", color=ft.Colors.RED_600 if error_count > 0 else ft.Colors.GREY_500),
+                ft.Divider(),
+                ft.Text("Operation completed!", color=ft.Colors.GREEN_600, italic=True)
+            ], tight=True),
+            actions=[
+                ft.TextButton("OK", on_click=lambda e: close_dialog(success_dialog))
+            ],
         )
-        total_renamed += renamed
-        total_errors += errors
-        
-        if renamed == 0 and errors == 0:
-            print(f"No files found to rename in '{target_folder}'.")
+        page.dialog = success_dialog
+        success_dialog.open = True
+        page.update()
     
-    print(f"\nSummary: {total_renamed} file(s) renamed successfully, {total_errors} error(s) encountered.")
+    def show_error_dialog(title, message):
+        error_dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text(title, color=ft.Colors.RED_600),
+            content=ft.Text(message),
+            actions=[
+                ft.TextButton("OK", on_click=lambda e: close_dialog(error_dialog))
+            ],
+        )
+        page.dialog = error_dialog
+        error_dialog.open = True
+        page.update()
+    
+    # Update UI state
+    def update_ui_state():
+        nonlocal selected_folder
+        
+        if selected_folder:
+            folder_field.value = os.path.basename(selected_folder)
+            
+            # Count files
+            try:
+                name_length = 8
+                recursive = recursive_checkbox.value
+                
+                files_list = list(get_files_to_rename(selected_folder, recursive))
+                file_count = len(files_list)
+                
+                if file_count > 0:
+                    file_count_text.value = f"{file_count} file(s) found"
+                    file_count_text.color = ft.Colors.GREEN_600
+                    rename_button.disabled = False
+                else:
+                    file_count_text.value = "No files found in selected folder"
+                    file_count_text.color = ft.Colors.ORANGE_600
+                    rename_button.disabled = True
+                                
+            except Exception as e:
+                file_count_text.value = f"Error accessing folder: {str(e)}"
+                file_count_text.color = ft.Colors.RED_600
+                rename_button.disabled = True
+        else:
+            folder_field.value = ""
+            file_count_text.value = "No folder selected"
+            file_count_text.color = ft.Colors.GREY_500
+            rename_button.disabled = True
+        
+        page.update()
+    
+    # Folder selection function
+    def select_folder(e):
+        def folder_picker_result(e: ft.FilePickerResultEvent):
+            nonlocal selected_folder
+            if e.path:
+                selected_folder = e.path
+                update_ui_state()
+        
+        folder_picker = ft.FilePicker(on_result=folder_picker_result)
+        page.overlay.append(folder_picker)
+        page.update()
+        folder_picker.get_directory_path(dialog_title="Select folder to rename files")
+    
+    # Rename files function
+    def rename_files(e):
+        if not selected_folder:
+            show_error_dialog("Error", "Please select a folder first")
+            return
+        
+        name_length = 8
+        
+        recursive = recursive_checkbox.value
+        
+        try:
+            files_list = list(get_files_to_rename(selected_folder, recursive))
+            
+            if not files_list:
+                show_error_dialog("No Files", "No files found in the selected folder")
+                return
+            
+            # Directly call perform_rename instead of showing confirmation dialog
+            perform_rename()
+            
+        except Exception as ex:
+            show_error_dialog("Error", f"Error accessing folder:\n\n{str(ex)}")
+    
+    # Perform rename function
+    def perform_rename():
+        # Update UI for renaming
+        rename_button.disabled = True
+        page.update()
+        
+        def rename_thread():
+            try:
+                name_length = 8
+                recursive = recursive_checkbox.value
+                
+                renamed_files = 0
+                errors = 0
+                
+                files_list = list(get_files_to_rename(selected_folder, recursive))
+                total_files = len(files_list)
+                
+                for i, (full_path, file_name) in enumerate(files_list):
+                    # Update progress
+                    progress = int((i + 1) / total_files * 100)
+                    def update_progress():
+                        page.update()
+                    page.run_thread(update_progress)
+                    
+                    name, extension = os.path.splitext(file_name)
+                    new_name = generate_random_name(name_length) + extension
+                    new_full_path = os.path.join(os.path.dirname(full_path), new_name)
+
+                    # Prevent potential name collisions
+                    while os.path.exists(new_full_path):
+                        new_name = generate_random_name(name_length) + extension
+                        new_full_path = os.path.join(os.path.dirname(full_path), new_name)
+
+                    try:
+                        os.rename(full_path, new_full_path)
+                        renamed_files += 1
+                    except PermissionError:
+                        errors += 1
+                    except Exception as e:
+                        errors += 1
+                
+                def update_ui_success():
+                    rename_button.disabled = False
+                    page.update()
+                    show_success_dialog(renamed_files, errors, selected_folder)
+                    update_ui_state()  # Refresh file count
+                
+                page.run_thread(update_ui_success)
+                
+            except Exception as ex:
+                error_msg = str(ex)
+                def update_ui_error():
+                    rename_button.disabled = False
+                    page.update()
+                    show_error_dialog("Rename Error", f"Failed to rename files:\n\n{error_msg}")
+                
+                page.run_thread(update_ui_error)
+        
+        threading.Thread(target=rename_thread, daemon=True).start()
+    
+    # Event handlers
+    browse_button.on_click = select_folder
+    rename_button.on_click = rename_files
+    recursive_checkbox.on_change = lambda e: update_ui_state()
+    
+    # Layout
+    page.add(
+        ft.Container(
+            content=ft.Container(
+                content=ft.Column([
+                    # Header
+                    ft.Container(
+                        content=title,
+                        alignment=ft.alignment.center,
+                        margin=ft.margin.only(bottom=30)
+                    ),
+                    
+                    # Folder selection
+                    ft.Container(
+                        content=ft.Row([
+                            folder_field,
+                            ft.Container(width=10),
+                            browse_button,
+                        ], alignment=ft.MainAxisAlignment.CENTER),
+                        margin=ft.margin.only(bottom=15)
+                    ),
+                    
+                    # File count with recursive checkbox
+                    ft.Container(
+                        content=ft.Row([
+                            recursive_checkbox,
+                            ft.Container(width=20),
+                            file_count_text,
+                        ], alignment=ft.MainAxisAlignment.CENTER),
+                        margin=ft.margin.only(bottom=30)
+                    ),
+                    
+                    # Action button
+                    ft.Container(
+                        content=rename_button,
+                        margin=ft.margin.only(bottom=20)
+                    ),                   
+                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                padding=30,
+                bgcolor=ft.Colors.WHITE,
+                border_radius=15,
+                shadow=ft.BoxShadow(
+                    spread_radius=1,
+                    blur_radius=15,
+                    color=ft.Colors.with_opacity(0.3, ft.Colors.GREY_400),
+                    offset=ft.Offset(0, 0),
+                )
+            ),
+            alignment=ft.alignment.center,
+            expand=True,
+        )
+    )
 
 if __name__ == "__main__":
-    main()
+    ft.app(main)

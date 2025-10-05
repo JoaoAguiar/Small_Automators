@@ -1,6 +1,6 @@
 # Python Automation Tools
 
-This repository contains a collection of Python automation tools designed to simplify everyday tasks. Each tool is designed to be easy to use and requires minimal setup.
+This repository contains a collection of Python automation tools with **modern Flet-based GUIs** designed to simplify everyday tasks. Each tool features a beautiful, responsive interface built with Google's Material Design principles through the Flet framework.
 
 ## Installation
 
@@ -9,6 +9,11 @@ To install all required dependencies, run:
 ```bash
 pip install -r requirements.txt
 ```
+
+**Main Requirements:**
+- Python 3.8+
+- Flet 0.21.0+ (Modern GUI framework)
+- Additional libraries as specified in requirements.txt
 
 ## Table of Contents
 
@@ -25,26 +30,24 @@ pip install -r requirements.txt
 
 ## Shutdown Timer
 
-A countdown timer application that automatically initiates system shutdown when the timer reaches zero. It uses a password-based security mechanism to prevent unauthorized timer cancellation.
+A modern countdown timer application with Material Design interface that automatically initiates system shutdown when the timer reaches zero. Features password-based security and real-time countdown display.
 
-### Features
+### Key Features
 
+- **Modern Flet GUI** with Material Design elements
 - Configurable countdown timer with slider (1-120 minutes)
-- Password protection with secure hashing for stopping the countdown
-- Sound alerts during countdown
-- Confirmation dialog before shutdown
-- Automatic system shutdown when timer expires
-- GUI built with Tkinter
-- Settings stored in configuration file
+- **Real-time countdown display** with color-coded progress
+- Password protection with secure SHA-256 hashing
+- **Automatic shutdown confirmation** dialog
+- Threaded countdown to prevent UI freezing
+- Settings stored in `shutdown_config.ini`
+- **Responsive design** with centered layout and shadows
 
 ### Requirements
 
-- Python 3.x
-- Tkinter (for GUI)
-  ```bash
-  pip install tk
-  ```
-- `winsound` module (included in Windows installations)
+- Python 3.8+
+- Flet framework
+- Built-in modules: `os`, `time`, `threading`, `hashlib`, `configparser`
 
 ### Usage
 
@@ -52,25 +55,73 @@ A countdown timer application that automatically initiates system shutdown when 
    ```bash
    python auto_shutdown.py
    ```
-2. Set desired time using the slider
-3. Click "Start Timer" to begin countdown
-4. To stop the timer, click the "Stop Timer" button and enter the correct password when prompted
+2. Set desired time using the intuitive slider interface
+3. Click "Start Timer" to begin countdown with visual feedback
+4. To stop: click "Stop Timer" and enter password (default: "pass")
+5. **New**: Visual countdown with color transitions (green → orange → red)
 
-## Image to PDF Converter
+### Configuration
 
-A simple tool that converts multiple image files (JPG, JPEG, PNG) into a single PDF document. The tool provides a file dialog to select multiple images at once.
+- Password and default timer settings stored in `shutdown_config.ini`
+- Default password: "pass" (can be modified in config file)
+- Customizable default countdown time
 
-### Features
+## YouTube Downloader
 
-- Supports JPG, JPEG, and PNG image formats
-- Combines multiple images into a single PDF
-- Interactive file selection dialog
-- Automatic page creation for each image
-- Configurable image positioning and sizing
+A modern GUI application for downloading YouTube videos with adaptive quality selection and FFmpeg integration. Built with Flet for a responsive, Material Design interface.
+
+### Key Features
+
+- **Modern Flet interface** with Material Design elements
+- Downloads videos in maximum available quality (up to 1080p with FFmpeg)
+- **FFmpeg detection and integration** for adaptive stream merging
+- **Progress tracking** with real-time download status
+- Custom download directory selection
+- **Threaded downloads** to prevent UI freezing
+- URL validation and video info display
+- **Responsive design** with clean, centered layout
 
 ### Requirements
 
-- Python 3.x
+- Python 3.8+
+- Flet framework
+- `pytubefix` library
+- FFmpeg (optional, for maximum quality up to 1080p)
+
+### Usage
+
+1. Run the script:
+   ```bash
+   python youtube_downloader.py
+   ```
+2. Paste a valid YouTube video URL
+3. Click "Info" to view video details and available streams
+4. Click "Download Video" and monitor progress
+5. Videos saved to Downloads/Youtube Videos (or custom location)
+
+### Notes
+
+- FFmpeg status indicator shows availability (green checkmark)
+- With FFmpeg: Downloads up to 1080p using adaptive streams
+- Without FFmpeg: Limited to progressive streams (typically 720p)
+
+## Image to PDF Converter
+
+A streamlined tool for converting multiple image files into a single PDF document with an intuitive Flet-based interface.
+
+### Key Features
+
+- **Modern Flet GUI** with drag-and-drop feel
+- **Multiple image selection** at once
+- Supports JPG, JPEG, and PNG formats
+- **Automatic page sizing** and positioning
+- Real-time conversion feedback
+- **Material Design** file selection dialogs
+
+### Requirements
+
+- Python 3.8+
+- Flet framework
 - fpdf2 library
 
 ### Usage
@@ -79,24 +130,29 @@ A simple tool that converts multiple image files (JPG, JPEG, PNG) into a single 
    ```bash
    python image_to_pdf.py
    ```
-2. Select the images you want to convert using the file dialog
-3. The PDF will be created as "image_to_pdf_result.pdf" in the same directory
+2. Click "Browse Files" to select multiple images
+3. Click "Convert to PDF" to process
+4. PDF saved as "image_to_pdf_result.pdf"
 
 ## Photo Compressor
 
-A basic image compression tool that reduces the file size of images by adjusting the quality settings. This is useful for reducing storage space or preparing images for web use.
+A powerful image compression tool with quality controls and batch processing capabilities, featuring a modern Flet interface.
 
-### Features
+### Key Features
 
-- Compresses images to reduce file size
-- Adjustable quality settings
-- Supports various image formats
-- Interactive file selection
-- Optimized JPEG output
+- **Modern Flet GUI** with intuitive controls
+- **Quality slider** for precise compression control (1-100%)
+- **File and folder selection** options
+- **Batch processing** with progress tracking
+- **Multiple format support** (JPG, JPEG, PNG, BMP, GIF)
+- **Threaded compression** for responsive UI
+- **Automatic RGB conversion** for optimal output
+- **Real-time progress updates** and statistics
 
 ### Requirements
 
-- Python 3.x
+- Python 3.8+
+- Flet framework
 - Pillow (PIL) library
 
 ### Usage
@@ -105,79 +161,102 @@ A basic image compression tool that reduces the file size of images by adjusting
    ```bash
    python photo_compressor.py
    ```
-2. Select an image file using the file dialog
-3. The compressed image will be saved as "photo_compressor_result.jpg"
+2. Select single image or entire folder
+3. Adjust quality using the slider
+4. Click "Compress" and monitor progress
+5. Compressed images saved to dedicated output folder
+
+### Output
+
+- Default location: `C:\Users\jpagu\Downloads\Compressed Photos`
+- Files saved with "_compressed" suffix
+- All images converted to JPEG format
 
 ## Internet Speed Test
 
-A command-line tool that measures your internet connection speed, including download speed, upload speed, and ping. It automatically selects the best server for testing.
+A clean, modern internet speed testing tool with real-time results display built using Flet's responsive interface.
 
-### Features
+### Key Features
 
-- Measures download and upload speeds
-- Tests ping latency
-- Automatically selects optimal test server
-- Displays ISP information
-- Shows server location
+- **Modern Flet interface** with live results
+- **Real-time speed measurement** display
+- Download, upload, and ping testing
+- **Automatic server selection** for optimal testing
+- **ISP and server information** display
+- **Responsive design** with progress indicators
 
 ### Requirements
 
-- Python 3.x
+- Python 3.8+
+- Flet framework
 - speedtest-cli library
 
 ### Usage
 
-```bash
-python internet_speed_test.py
-```
-
-The tool will automatically run the speed test and display the results.
+1. Run the script:
+   ```bash
+   python internet_speed_test.py
+   ```
+2. Click "Start Test" to begin speed measurement
+3. View real-time results for download/upload speeds
+4. Results include ping, ISP info, and server location
 
 ## LinkedIn Jobs Scraper
 
-A job search automation tool that searches for job postings using the JSearch API. It can search for both remote and on-site positions across multiple countries.
+An automated job search tool with modern interface for finding remote and on-site positions using the JSearch API.
 
-### Features
+### Key Features
 
-- Searches for jobs by title and country
-- Supports multiple countries with automatic country code detection
-- Finds both remote and on-site positions
-- Filters for full-time, part-time, and internship positions
-- Saves results to a text file
-- Removes duplicate job postings
+- **Modern Flet GUI** with search controls
+- **Multi-country job search** with auto-detection
+- **Remote and on-site position filtering**
+- **Multiple employment types** (full-time, part-time, internships)
+- **Duplicate removal** and result organization
+- **Real-time search progress** and status updates
+- **Export functionality** to text files
 
 ### Requirements
 
-- Python 3.x
+- Python 3.8+
+- Flet framework
 - requests library
 - Valid RapidAPI key for JSearch API
 
 ### Usage
 
-1. Update the API key in the script with your RapidAPI key
+1. Update API key in script
 2. Run the script:
    ```bash
    python linkedin_jobs.py
    ```
-3. Enter the job title and country when prompted
-4. Results will be saved to "linkedin_jobs_result.txt"
+3. Enter job title and select country
+4. Click "Search Jobs" and monitor progress
+5. Results saved to "linkedin_jobs_result.txt"
+
+### Configuration
+
+- Requires RapidAPI key for JSearch API
+- Supports multiple countries with automatic code detection
+- Configurable search parameters and filters
 
 ## Plagiarism Checker
 
-A text similarity analyzer that compares two text files and calculates their similarity percentage. This tool is useful for detecting potential plagiarism or duplicate content.
+A text similarity analyzer with modern interface for comparing documents and detecting potential plagiarism.
 
-### Features
+### Key Features
 
-- Compares two text files for similarity
-- Calculates similarity percentage
-- Interactive file selection
-- Handles text encoding errors gracefully
-- Uses SequenceMatcher for accurate comparison
+- **Modern Flet interface** for file selection
+- **Dual file comparison** with similarity percentage
+- **SequenceMatcher algorithm** for accurate analysis
+- **Encoding error handling** for various text formats
+- **Real-time analysis** with progress feedback
+- **Clear results display** with percentage breakdown
 
 ### Requirements
 
-- Python 3.x
-- No external libraries required (uses difflib from standard library)
+- Python 3.8+
+- Flet framework
+- Built-in difflib module
 
 ### Usage
 
@@ -185,127 +264,87 @@ A text similarity analyzer that compares two text files and calculates their sim
    ```bash
    python plagiarism_checker.py
    ```
-2. Select the first file using the file dialog
-3. Select the second file using the file dialog
-4. The similarity percentage will be displayed
+2. Select first file using "Browse" button
+3. Select second file for comparison
+4. Click "Check Similarity" to analyze
+5. View similarity percentage and analysis
 
-## YouTube Downloader
+## File Renaming Tool
 
-A simple GUI application for downloading YouTube videos in the highest available resolution. This tool uses the `yt-dlp` library for efficient video downloads.
+A utility for bulk file renaming with random alphanumeric names, featuring a clean Flet interface with safety features.
 
-### Features
+### Key Features
 
-- Download videos in the best available quality
-- Custom download directory selection
-- Progress indicator during download
-- URL validation to ensure valid YouTube links
-- Simple and clean graphical user interface
-- Centered window placement on the screen
-- Success/error notification messages
+- **Modern Flet GUI** with intuitive controls
+- **Random name generation** (fixed 8-character length)
+- **Extension preservation** for all file types
+- **Recursive folder processing** option
+- **Collision prevention** with duplicate checking
+- **Real-time file counting** and preview
+- **Threaded operations** for responsive UI
+- **Default folder setup** (C:\Users\jpagu\Pictures)
 
 ### Requirements
 
-- Python 3.x
-- `yt-dlp` library
-  ```bash
-  pip install yt-dlp
-  ```
-- Tkinter (usually included with Python)
+- Python 3.8+
+- Flet framework
+- Built-in modules: `os`, `random`, `string`, `threading`
 
 ### Usage
 
 1. Run the script:
    ```bash
-   python youtube_downloader.py
+   python rename_random.py
    ```
-2. Paste a valid YouTube video URL in the input field
-3. Click the "Download" button
-4. Select a destination folder when prompted
-5. Monitor the download progress
-6. Wait for the success message or check for error notifications
+2. Select target folder (defaults to Pictures)
+3. Enable recursive processing if needed
+4. Click "Rename Files" to process
+5. All files renamed with 8-character random names
 
-## File Renaming Tool
+### Safety Features
 
-A utility script that renames all files in specified directories with random alphanumeric names while preserving file extensions. It handles name conflicts and provides detailed feedback.
-
-### Features
-
-- Renames files with randomly generated alphanumeric names
-- Preserves original file extensions
-- Configurable random name length
-- Optional recursive mode to process subdirectories
-- User confirmation before batch operations
-- Prevents name conflicts by checking existing names
-- Works with multiple directories simultaneously
-- Provides detailed feedback and summary statistics
-
-### Requirements
-
-- Python 3.x
-- No external libraries required (uses standard libraries only)
-
-### Usage
-
-```bash
-python rename_random.py [folders...] [-l LENGTH] [-r] [-y]
-```
-
-Options:
-- `folders`: Space-separated list of directories to process
-- `-l, --length`: Length of generated random names (default: 8)
-- `-r, --recursive`: Process subdirectories recursively
-- `-y, --yes`: Skip confirmation prompts
-
-If no folder paths are provided, the script will prompt for target folders.
-
-### Example
-
-```bash
-# Basic usage
-python rename_random.py "C:\Users\YourUsername\Documents"
-
-# With options
-python rename_random.py "C:\Users\YourUsername\Documents" -l 12 -r -y
-```
+- **File count preview** before operation
+- **Extension preservation** to maintain file types
+- **Collision detection** to prevent overwrites
+- **Progress feedback** during batch operations
 
 ## Notes Automator
 
-A productivity tool that streamlines the creation of note files with specific extensions in organized folders. It's particularly useful for programmers who work with multiple languages.
+A productivity tool for creating organized note files with language-specific templates and automatic folder organization.
 
-### Features
+### Core Features
 
-- Creates notes with appropriate file extensions for different programming languages
-- Automatically organizes files into specified folders
-- File templates for common programming languages
-- Opens the created note file in the default system editor
-- Cross-platform support (Windows, macOS, Linux)
-- Supports 16+ file types including programming languages and text formats
+- **File template system** for 16+ programming languages
+- **Automatic folder organization** and creation
+- **Cross-platform editor integration** (Windows, macOS, Linux)
+- **Command-line interface** with flexible options
+- **Language-specific extensions** and templates
 
-### Supported File Extensions
+### Supported Languages
 
-| Language/Type | Extension | Command Argument |
-|---------------|-----------|-----------------|
-| Ruby          | `.rb`     | `ruby`          |
-| PHP           | `.php`    | `php`           |
-| JavaScript    | `.js`     | `javascript`    |
-| TypeScript    | `.ts`     | `typescript`    |
-| Python        | `.py`     | `python`        |
-| Java          | `.java`   | `java`          |
-| Dart          | `.dart`   | `dart`          |
-| Plain Text    | `.txt`    | `text`          |
-| XML           | `.xml`    | `xml`           |
-| HTML          | `.html`   | `html`          |
-| CSS           | `.css`    | `css`           |
-| JSON          | `.json`   | `json`          |
-| C             | `.c`      | `c`             |
-| C++           | `.cpp`    | `cpp`           |
-| C#            | `.cs`     | `csharp`        |
-| SQL           | `.sql`    | `sql`           |
+| Language/Type | Extension | Command |
+|---------------|-----------|---------|
+| Ruby          | `.rb`     | `ruby`  |
+| PHP           | `.php`    | `php`   |
+| JavaScript    | `.js`     | `javascript` |
+| TypeScript    | `.ts`     | `typescript` |
+| Python        | `.py`     | `python` |
+| Java          | `.java`   | `java`  |
+| Dart          | `.dart`   | `dart`  |
+| Plain Text    | `.txt`    | `text`  |
+| XML           | `.xml`    | `xml`   |
+| HTML          | `.html`   | `html`  |
+| CSS           | `.css`    | `css`   |
+| JSON          | `.json`   | `json`  |
+| C             | `.c`      | `c`     |
+| C++           | `.cpp`    | `cpp`   |
+| C#            | `.cs`     | `csharp` |
+| SQL           | `.sql`    | `sql`   |
 
 ### Requirements
 
-- Python 3.x
-- No external libraries required
+- Python 3.8+
+- No external dependencies required
 
 ### Usage
 
@@ -313,18 +352,30 @@ A productivity tool that streamlines the creation of note files with specific ex
 python notes.py -e EXTENSION -f FOLDER -n FILENAME [-t]
 ```
 
-Where:
-- `-e, --extension`: File extension/language (use language name from the table)
-- `-f, --folder`: Folder name to store the note
-- `-n, --name`: Name of the note file (without extension)
-- `-t, --no-template`: Don't use language template (create empty file)
+Options:
+- `-e, --extension`: Language/file type from supported list
+- `-f, --folder`: Organization folder name
+- `-n, --name`: Note filename (without extension)
+- `-t, --no-template`: Create empty file (skip template)
 
 ### Examples
 
 ```bash
-# Create a Python note with template
-python notes.py -e python -f my_notes -n todo_list
+# Create Python note with template
+python notes.py -e python -f projects -n todo_app
 
-# Create a text note (empty file)
-python notes.py -e text -f documents -n shopping_list -t
+# Create empty text file
+python notes.py -e text -f documents -n notes -t
 ```
+
+---
+
+## Technology Stack
+
+All applications in this repository utilize:
+
+- **Frontend**: Flet (Python) with Material Design
+- **Architecture**: Threaded operations for responsive UI
+- **File Operations**: Built-in Python libraries
+- **Configuration**: INI files and local storage
+- **Cross-Platform**: Windows, macOS, Linux support
