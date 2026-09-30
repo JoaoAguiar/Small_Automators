@@ -1,44 +1,25 @@
 import os
 import time
 import threading
-import hashlib
 import configparser
 import flet as ft
 
 # Configuration file for settings
 CONFIG_FILE = "shutdown_config.ini"
 
-def main(page: ft.Page):
+async def main(page: ft.Page):
     page.title = "Auto Shutdown Timer"
-    page.window_resizable = False
-    page.window.center()
-    page.theme_mode = "light"
+    page.window.resizable = False
+    page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 30
     page.window.height = 650
     page.window.width = 500
+    await page.window.center()
     
     # Global variables
     remaining_time = 0
     timer_running = False
     timer_thread = None
-    
-    def get_password_hash():
-        """Get password hash from config or create new config with default"""
-        config = configparser.ConfigParser()
-        
-        if os.path.exists(CONFIG_FILE):
-            config.read(CONFIG_FILE)
-            if 'Security' in config and 'PasswordHash' in config['Security']:
-                return config['Security']['PasswordHash']
-        
-        # Create default config if no file exists
-        config['Security'] = {'PasswordHash': hashlib.sha256("pass".encode()).hexdigest()}
-        config['Settings'] = {'DefaultTime': '90'}
-        
-        with open(CONFIG_FILE, 'w') as f:
-            config.write(f)
-        
-        return config['Security']['PasswordHash']
     
     def get_default_time():
         """Get default countdown time from config"""
@@ -48,8 +29,6 @@ def main(page: ft.Page):
             if 'Settings' in config and 'DefaultTime' in config['Settings']:
                 return int(config['Settings']['DefaultTime'])
         return 90  # Default fallback
-    
-    password_hash = get_password_hash()
     
     # Create UI elements
     title = ft.Text(
@@ -88,18 +67,26 @@ def main(page: ft.Page):
         active_color=ft.Colors.RED_600,
         inactive_color=ft.Colors.GREY_300
     )
+
+    def get_selected_minutes() -> int:
+        value = time_slider.value
+        return int(value) if value is not None else 1
     
     # Slider value display
     slider_value_text = ft.Text(
-        f"{int(time_slider.value)} minutes",
+        f"{get_selected_minutes()} minutes",
         size=14,
         color=ft.Colors.GREY_600,
         text_align=ft.TextAlign.CENTER
     )
+
+    def update_slider_display(e):
+        slider_value_text.value = f"{get_selected_minutes()} minutes"
+        page.update()
     
     # Start button
-    start_button = ft.ElevatedButton(
-        text="Start Timer",
+    start_button = ft.Button(
+        content="Start Timer",
         width=120,
         height=50,
         style=ft.ButtonStyle(
@@ -111,8 +98,8 @@ def main(page: ft.Page):
     )
     
     # Stop button
-    stop_button = ft.ElevatedButton(
-        text="Stop Timer",
+    stop_button = ft.Button(
+        content="Stop Timer",
         width=120,
         height=50,
         style=ft.ButtonStyle(
@@ -133,97 +120,30 @@ def main(page: ft.Page):
     
     # Warning text
     warning_text = ft.Text(
-        "⚠️ System will shutdown when timer reaches 00:00",
+        "âš ï¸ System will shutdown when timer reaches 00:00",
         size=12,
         color=ft.Colors.ORANGE_600,
         text_align=ft.TextAlign.CENTER,
         visible=False
     )
     
-    # Password info
-    password_info = ft.Text(
-        "Default password: 'pass' (stored in shutdown_config.ini)",
-        size=10,
-        color=ft.Colors.GREY_500,
-        text_align=ft.TextAlign.CENTER
-    )
-    
     # Dialog functions
-    
-    def show_password_dialog(title_text, callback):
-        print(f"Creating password dialog: {title_text}")  # Debug
-        
-        password_field = ft.TextField(
-            label="Password",
-            password=True,
-            can_reveal_password=True,
-            width=250,
-            autofocus=True,
-            on_submit=lambda e: on_submit()  # Allow Enter key
-        )
-        
-        def on_submit():
-            password = password_field.value
-            print(f"Password submitted: {password}")  # Debug
-            dialog.open = False
-            page.update()
-            callback(password)
-        
-        def on_cancel():
-            print("Password dialog cancelled")  # Debug
-            dialog.open = False
-            page.update()
-            callback(None)
-        
-        dialog = ft.AlertDialog(
-            modal=True,
-            title=ft.Text(title_text, color=ft.Colors.BLUE_600, size=18),
-            content=ft.Container(
-                content=ft.Column([
-                    ft.Text("Enter password to stop the timer:", size=14),
-                    ft.Container(height=10),
-                    password_field,
-                    ft.Container(height=5),
-                    ft.Text("Default password: 'pass'", size=12, color=ft.Colors.GREY_600)
-                ], tight=True),
-                width=300,
-                height=120
-            ),
-            actions=[
-                ft.TextButton("Cancel", on_click=lambda e: on_cancel()),
-                ft.TextButton("OK", on_click=lambda e: on_submit())
-            ],
-            actions_alignment=ft.MainAxisAlignment.END
-        )
-        
-        try:
-            # Use page.overlay instead of page.dialog
-            page.overlay.clear()  # Clear any existing overlays
-            page.overlay.append(dialog)
-            dialog.open = True
-            page.update()
-            print("Password dialog created and should be visible")  # Debug
-            
-        except Exception as ex:
-            print(f"Error showing dialog: {ex}")  # Debug
     
     def show_shutdown_confirmation(callback):
         confirm_dialog = ft.AlertDialog(
             modal=True,
             title=ft.Text("Confirm Shutdown", color=ft.Colors.RED_600),
             content=ft.Column([
-                ft.Text("⚠️ The system will shut down now!", size=16, weight=ft.FontWeight.BOLD),
+                ft.Text("âš ï¸ The system will shut down now!", size=16, weight=ft.FontWeight.BOLD),
                 ft.Text("This action cannot be undone."),
                 ft.Text("Do you want to continue?")
             ], tight=True),
             actions=[
-                ft.TextButton("Cancel", on_click=lambda e: [setattr(confirm_dialog, 'open', False), page.update(), callback(False)]),
-                ft.TextButton("Shutdown Now", on_click=lambda e: [setattr(confirm_dialog, 'open', False), page.update(), callback(True)])
+                ft.TextButton(content="Cancel", on_click=lambda e: [page.pop_dialog(), callback(False)]),
+                ft.TextButton(content="Shutdown Now", on_click=lambda e: [page.pop_dialog(), callback(True)])
             ],
         )
-        page.overlay.append(confirm_dialog)
-        confirm_dialog.open = True
-        page.update()
+        page.show_dialog(confirm_dialog)
     
     def show_error_dialog(title, message):
         error_dialog = ft.AlertDialog(
@@ -231,12 +151,10 @@ def main(page: ft.Page):
             title=ft.Text(title, color=ft.Colors.RED_600),
             content=ft.Text(message),
             actions=[
-                ft.TextButton("OK", on_click=lambda e: [setattr(error_dialog, 'open', False), page.update()])
+                ft.TextButton(content="OK", on_click=lambda e: [page.pop_dialog()])
             ],
         )
-        page.overlay.append(error_dialog)
-        error_dialog.open = True
-        page.update()
+        page.show_dialog(error_dialog)
     
     def show_success_dialog(message):
         success_dialog = ft.AlertDialog(
@@ -244,23 +162,10 @@ def main(page: ft.Page):
             title=ft.Text("Timer Stopped", color=ft.Colors.GREEN_600),
             content=ft.Text(message),
             actions=[
-                ft.TextButton("OK", on_click=lambda e: [setattr(success_dialog, 'open', False), page.update()])
+                ft.TextButton(content="OK", on_click=lambda e: [page.pop_dialog()])
             ],
         )
-        page.overlay.append(success_dialog)
-        success_dialog.open = True
-        page.update()
-    
-    def verify_password(input_password):
-        """Verify the password against stored hash"""
-        if not input_password:
-            return False
-        input_hash = hashlib.sha256(input_password.encode()).hexdigest()
-        return input_hash == password_hash
-    
-    def update_slider_display(e):
-        slider_value_text.value = f"{int(time_slider.value)} minutes"
-        page.update()
+        page.show_dialog(success_dialog)
     
     def update_time_display():
         """Update the countdown timer display"""
@@ -330,7 +235,7 @@ def main(page: ft.Page):
         nonlocal remaining_time, timer_running, timer_thread
         
         # Get minutes from slider and convert to seconds
-        minutes = int(time_slider.value)
+        minutes = get_selected_minutes()
         remaining_time = minutes * 60
         
         # Update UI
@@ -355,45 +260,25 @@ def main(page: ft.Page):
         print(f"Timer thread started for {minutes} minutes")  # Debug
     
     def stop_timer(e):
-        print("Stop timer button clicked!")  # Debug
-        print("Calling show_password_dialog...")  # Debug
-        
-        def on_password_entered(password):
-            print(f"Password callback called with: {password}")  # Debug
-            nonlocal timer_running
-            
-            if password and verify_password(password):
-                print("Password verified, stopping timer")  # Debug
-                timer_running = False
-                
-                # Cancel any scheduled shutdown
-                try:
-                    os.system("shutdown /a")
-                    print("Shutdown cancelled")  # Debug
-                except Exception as ex:
-                    print(f"Error cancelling shutdown: {ex}")  # Debug
-                
-                # Update UI
-                time_display.value = "Timer stopped"
-                time_display.color = ft.Colors.BLUE_600
-                status_text.value = "Timer stopped by user"
-                status_text.color = ft.Colors.BLUE_600
-                warning_text.visible = False
-                start_button.disabled = False
-                stop_button.disabled = True
-                page.update()
-                
-                show_success_dialog("Timer has been stopped and shutdown cancelled.")
-                
-            elif password is not None:  # Password was entered but incorrect
-                print("Incorrect password entered")  # Debug
-                show_error_dialog("Incorrect Password", "The password is incorrect.")
-            else:
-                print("No password entered (cancelled)")  # Debug
-        
-        # Always show dialog regardless of timer state for testing
-        print("About to call show_password_dialog...")  # Debug
-        show_password_dialog("Stop Timer", on_password_entered)
+        nonlocal timer_running
+        timer_running = False
+
+        # Cancel any scheduled shutdown.
+        try:
+            os.system("shutdown /a")
+        except OSError as ex:
+            print(f"Error cancelling shutdown: {ex}")
+
+        time_display.value = "Timer stopped"
+        time_display.color = ft.Colors.BLUE_600
+        status_text.value = "Timer stopped by user"
+        status_text.color = ft.Colors.BLUE_600
+        warning_text.visible = False
+        start_button.disabled = False
+        stop_button.disabled = True
+        page.update()
+
+        show_success_dialog("Timer has been stopped and shutdown cancelled.")
     
     # Assign events - ensure they are properly connected
     time_slider.on_change = update_slider_display
@@ -411,19 +296,19 @@ def main(page: ft.Page):
                     # Header
                     ft.Container(
                         content=title,
-                        alignment=ft.alignment.center,
-                        margin=ft.margin.only(bottom=25)
+                        alignment=ft.Alignment(0, 0),
+                        margin=ft.Margin(bottom=25)
                     ),
                     
                     # Time display
                     ft.Container(
                         content=time_display,
-                        alignment=ft.alignment.center,
+                        alignment=ft.Alignment(0, 0),
                         padding=10,
                         bgcolor=ft.Colors.GREY_50,
                         border_radius=15,
-                        border=ft.border.all(2, ft.Colors.GREY_300),
-                        margin=ft.margin.only(bottom=20)
+                        border=ft.Border.all(2, ft.Colors.GREY_300),
+                        margin=ft.Margin(bottom=20)
                     ),
                     
                     # Time slider section
@@ -435,7 +320,7 @@ def main(page: ft.Page):
                             ft.Container(height=1),
                             slider_value_text,
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                        margin=ft.margin.only(bottom=25)
+                        margin=ft.Margin(bottom=25)
                     ),
                     
                     # Buttons
@@ -445,7 +330,7 @@ def main(page: ft.Page):
                             ft.Container(width=20),
                             stop_button,
                         ], alignment=ft.MainAxisAlignment.CENTER),
-                        margin=ft.margin.only(bottom=20)
+                        margin=ft.Margin(bottom=20)
                     ),
                     
                     # Warning
@@ -458,7 +343,6 @@ def main(page: ft.Page):
                         content=ft.Column([
                             status_text,
                             ft.Container(height=1),
-                            password_info,
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
                     )
                     
@@ -473,10 +357,10 @@ def main(page: ft.Page):
                     offset=ft.Offset(0, 0),
                 )
             ),
-            alignment=ft.alignment.center,
+            alignment=ft.Alignment(0, 0),
             expand=True,
         )
     )
 
 if __name__ == "__main__":
-    ft.app(main)
+    ft.run(main)

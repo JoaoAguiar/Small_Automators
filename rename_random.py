@@ -21,14 +21,15 @@ def get_files_to_rename(target_folder, recursive):
             if os.path.isfile(full_path):
                 yield full_path, file_name
 
-def main(page: ft.Page):
+async def main(page: ft.Page):
     page.title = "Random File Renamer"
-    page.window_resizable = False
-    page.window.center()
-    page.theme_mode = "light"
+    page.window.resizable = False
+    page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 30
     page.window.height = 435
     page.window.width = 550
+    await page.window.center()
+    folder_picker = ft.FilePicker()
     
     # Global variable for selected folder
     selected_folder = r"C:\Users\jpagu\Pictures"
@@ -54,8 +55,8 @@ def main(page: ft.Page):
         read_only=True
     )
     
-    browse_button = ft.ElevatedButton(
-        text="Browse",
+    browse_button = ft.Button(
+        content="Browse",
         width=100,
         height=40,
         style=ft.ButtonStyle(
@@ -75,8 +76,8 @@ def main(page: ft.Page):
     )
     
     # Rename button
-    rename_button = ft.ElevatedButton(
-        text="Rename Files",
+    rename_button = ft.Button(
+        content="Rename Files",
         width=140,
         height=50,
         style=ft.ButtonStyle(
@@ -97,8 +98,8 @@ def main(page: ft.Page):
     
     # Dialog functions
     def close_dialog(dialog):
-        dialog.open = False
-        page.update()
+        if dialog.open:
+            page.pop_dialog()
     
     def show_success_dialog(renamed_count, error_count, folder_path):
         success_dialog = ft.AlertDialog(
@@ -113,12 +114,10 @@ def main(page: ft.Page):
                 ft.Text("Operation completed!", color=ft.Colors.GREEN_600, italic=True)
             ], tight=True),
             actions=[
-                ft.TextButton("OK", on_click=lambda e: close_dialog(success_dialog))
+                ft.TextButton(content="OK", on_click=lambda e: close_dialog(success_dialog))
             ],
         )
-        page.dialog = success_dialog
-        success_dialog.open = True
-        page.update()
+        page.show_dialog(success_dialog)
     
     def show_error_dialog(title, message):
         error_dialog = ft.AlertDialog(
@@ -126,12 +125,10 @@ def main(page: ft.Page):
             title=ft.Text(title, color=ft.Colors.RED_600),
             content=ft.Text(message),
             actions=[
-                ft.TextButton("OK", on_click=lambda e: close_dialog(error_dialog))
+                ft.TextButton(content="OK", on_click=lambda e: close_dialog(error_dialog))
             ],
         )
-        page.dialog = error_dialog
-        error_dialog.open = True
-        page.update()
+        page.show_dialog(error_dialog)
     
     # Update UI state
     def update_ui_state():
@@ -170,17 +167,16 @@ def main(page: ft.Page):
         page.update()
     
     # Folder selection function
-    def select_folder(e):
-        def folder_picker_result(e: ft.FilePickerResultEvent):
-            nonlocal selected_folder
-            if e.path:
-                selected_folder = e.path
-                update_ui_state()
-        
-        folder_picker = ft.FilePicker(on_result=folder_picker_result)
-        page.overlay.append(folder_picker)
-        page.update()
-        folder_picker.get_directory_path(dialog_title="Select folder to rename files")
+    async def select_folder(e):
+        nonlocal selected_folder
+
+        selected_path = await folder_picker.get_directory_path(
+            dialog_title="Select folder to rename files",
+            initial_directory=selected_folder,
+        )
+        if selected_path:
+            selected_folder = selected_path
+            update_ui_state()
     
     # Rename files function
     def rename_files(e):
@@ -278,8 +274,8 @@ def main(page: ft.Page):
                     # Header
                     ft.Container(
                         content=title,
-                        alignment=ft.alignment.center,
-                        margin=ft.margin.only(bottom=30)
+                        alignment=ft.Alignment(0, 0),
+                        margin=ft.Margin(bottom=30)
                     ),
                     
                     # Folder selection
@@ -289,7 +285,7 @@ def main(page: ft.Page):
                             ft.Container(width=10),
                             browse_button,
                         ], alignment=ft.MainAxisAlignment.CENTER),
-                        margin=ft.margin.only(bottom=15)
+                        margin=ft.Margin(bottom=15)
                     ),
                     
                     # File count with recursive checkbox
@@ -299,13 +295,13 @@ def main(page: ft.Page):
                             ft.Container(width=20),
                             file_count_text,
                         ], alignment=ft.MainAxisAlignment.CENTER),
-                        margin=ft.margin.only(bottom=30)
+                        margin=ft.Margin(bottom=30)
                     ),
                     
                     # Action button
                     ft.Container(
                         content=rename_button,
-                        margin=ft.margin.only(bottom=20)
+                        margin=ft.Margin(bottom=20)
                     ),                   
                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
                 padding=30,
@@ -318,10 +314,10 @@ def main(page: ft.Page):
                     offset=ft.Offset(0, 0),
                 )
             ),
-            alignment=ft.alignment.center,
+            alignment=ft.Alignment(0, 0),
             expand=True,
         )
     )
 
 if __name__ == "__main__":
-    ft.app(main)
+    ft.run(main)

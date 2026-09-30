@@ -2,14 +2,14 @@ import threading
 import flet as ft
 import speedtest as st
 
-def main(page: ft.Page):
+async def main(page: ft.Page):
     page.title = "Internet Speed Test"
-    page.window_resizable = False
-    page.window.center()
-    page.theme_mode = "light"
+    page.window.resizable = False
+    page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 30
     page.window.height = 600
     page.window.width = 500
+    await page.window.center()
     
     # Create UI elements
     title = ft.Text(
@@ -22,8 +22,8 @@ def main(page: ft.Page):
     )
     
     # Test button
-    test_button = ft.ElevatedButton(
-        text="Start Speed Test",
+    test_button = ft.Button(
+        content="Start Speed Test",
         width=150,
         height=50,
         style=ft.ButtonStyle(
@@ -91,8 +91,8 @@ def main(page: ft.Page):
     
     # Dialog functions
     def close_dialog(dialog):
-        dialog.open = False
-        page.update()
+        if dialog.open:
+            page.pop_dialog()
     
     def show_results_dialog(server_name, isp_name, down, up, ping):
         results_dialog = ft.AlertDialog(
@@ -109,12 +109,10 @@ def main(page: ft.Page):
                 ft.Text("Test completed successfully!", color=ft.Colors.GREEN_600, italic=True)
             ], tight=True),
             actions=[
-                ft.TextButton("OK", on_click=lambda e: close_dialog(results_dialog))
+                ft.TextButton(content="OK", on_click=lambda e: close_dialog(results_dialog))
             ],
         )
-        page.dialog = results_dialog
-        results_dialog.open = True
-        page.update()
+        page.show_dialog(results_dialog)
     
     def show_error_dialog(title, message):
         error_dialog = ft.AlertDialog(
@@ -122,12 +120,10 @@ def main(page: ft.Page):
             title=ft.Text(title, color=ft.Colors.RED_600),
             content=ft.Text(message),
             actions=[
-                ft.TextButton("OK", on_click=lambda e: close_dialog(error_dialog))
+                ft.TextButton(content="OK", on_click=lambda e: close_dialog(error_dialog))
             ],
         )
-        page.dialog = error_dialog
-        error_dialog.open = True
-        page.update()
+        page.show_dialog(error_dialog)
     
     # Speed test function
     def run_speed_test(e):
@@ -247,8 +243,8 @@ def main(page: ft.Page):
                     # Header
                     ft.Container(
                         content=title,
-                        alignment=ft.alignment.center,
-                        margin=ft.margin.only(bottom=30)
+                        alignment=ft.Alignment(0, 0),
+                        margin=ft.Margin(bottom=30)
                     ),
                     
                     # Test button and progress
@@ -263,7 +259,7 @@ def main(page: ft.Page):
                     # Status
                     ft.Container(
                         content=status_text,
-                        margin=ft.margin.only(bottom=20)
+                        margin=ft.Margin(bottom=20)
                     ),
                     
                     # Results section
@@ -275,7 +271,7 @@ def main(page: ft.Page):
                                     server_info,
                                     isp_info,
                                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                                margin=ft.margin.only(bottom=10)
+                                margin=ft.Margin(bottom=10)
                             ),
                             
                             # Speed results
@@ -290,7 +286,7 @@ def main(page: ft.Page):
                                 padding=15,
                                 bgcolor=ft.Colors.GREY_50,
                                 border_radius=10,
-                                border=ft.border.all(1, ft.Colors.GREY_300)
+                                border=ft.Border.all(1, ft.Colors.GREY_300)
                             )
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
                     )
@@ -306,10 +302,10 @@ def main(page: ft.Page):
                     offset=ft.Offset(0, 0),
                 )
             ),
-            alignment=ft.alignment.center,
+            alignment=ft.Alignment(0, 0),
             expand=True,
         )
     )
 
 if __name__ == "__main__":
-    ft.app(main)
+    ft.run(main)

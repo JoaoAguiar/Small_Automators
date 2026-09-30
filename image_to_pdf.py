@@ -13,17 +13,23 @@ def create_default_directory():
             return os.path.expanduser("~/Downloads")
     return default_dir
 
-def main(page: ft.Page):
+async def main(page: ft.Page):
     page.title = "Image to PDF Converter"
-    page.window_resizable = False
-    page.window.center()
-    page.theme_mode = "light"
+    page.window.resizable = False
+    page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 30
     page.window.height = 650
     page.window.width = 520
+    await page.window.center()
+    file_picker = ft.FilePicker()
+
+    # Set custom icon
+    icon_path = os.path.join(os.path.dirname(__file__), "youtube_icon.png")
+    if os.path.exists(icon_path):
+        page.window.icon = icon_path
     
     # Global variable for selected images
-    selected_images = []
+    selected_images: list[str] = []
     
     # Create UI elements
     title = ft.Text(
@@ -44,8 +50,8 @@ def main(page: ft.Page):
     )
     
     # Select images button
-    select_button = ft.ElevatedButton(
-        text="Select Images",
+    select_button = ft.Button(
+        content="Select Images",
         width=140,
         height=45,
         style=ft.ButtonStyle(
@@ -67,8 +73,8 @@ def main(page: ft.Page):
     )
     
     # Convert button
-    convert_button = ft.ElevatedButton(
-        text="Convert to PDF",
+    convert_button = ft.Button(
+        content="Convert to PDF",
         width=140,
         height=50,
         style=ft.ButtonStyle(
@@ -80,8 +86,8 @@ def main(page: ft.Page):
     )
     
     # Clear selection button
-    clear_button = ft.ElevatedButton(
-        text="Clear Selection",
+    clear_button = ft.Button(
+        content="Clear Selection",
         width=120,
         height=40,
         style=ft.ButtonStyle(
@@ -118,8 +124,8 @@ def main(page: ft.Page):
     
     # Dialog functions
     def close_dialog(dialog):
-        dialog.open = False
-        page.update()
+        if dialog.open:
+            page.pop_dialog()
     
     def show_success_dialog(message, output_path=""):
         success_dialog = ft.AlertDialog(
@@ -137,12 +143,10 @@ def main(page: ft.Page):
                 )
             ], tight=True),
             actions=[
-                ft.TextButton("OK", on_click=lambda e: close_dialog(success_dialog))
+                ft.TextButton(content="OK", on_click=lambda e: close_dialog(success_dialog))
             ],
         )
-        page.dialog = success_dialog
-        success_dialog.open = True
-        page.update()
+        page.show_dialog(success_dialog)
     
     def show_error_dialog(title, message):
         error_dialog = ft.AlertDialog(
@@ -150,12 +154,10 @@ def main(page: ft.Page):
             title=ft.Text(title, color=ft.Colors.RED_600),
             content=ft.Text(message),
             actions=[
-                ft.TextButton("OK", on_click=lambda e: close_dialog(error_dialog))
+                ft.TextButton(content="OK", on_click=lambda e: close_dialog(error_dialog))
             ],
         )
-        page.dialog = error_dialog
-        error_dialog.open = True
-        page.update()
+        page.show_dialog(error_dialog)
     
     def show_images_dialog():
         if not selected_images:
@@ -182,20 +184,21 @@ def main(page: ft.Page):
                 width=400
             ),
             actions=[
-                ft.TextButton("OK", on_click=lambda e: close_dialog(images_dialog))
+                ft.TextButton(content="OK", on_click=lambda e: close_dialog(images_dialog))
             ],
         )
-        page.dialog = images_dialog
-        images_dialog.open = True
-        page.update()
+        page.show_dialog(images_dialog)
     
     # File selection function
-    def select_images(e):
+    async def select_images(e):
         def file_picker_result(e: ft.FilePickerResultEvent):
             nonlocal selected_images
             
             if e.files:
-                selected_images = [f.path for f in e.files]
+                selected_images = []
+                for selected_file in e.files:
+                    if selected_file.path:
+                        selected_images.append(selected_file.path)
                 
                 # Update UI
                 files_text.value = f"{len(selected_images)} image(s) selected"
@@ -205,11 +208,8 @@ def main(page: ft.Page):
                 
                 page.update()
         
-        file_picker = ft.FilePicker(on_result=file_picker_result)
-        page.overlay.append(file_picker)
-        page.update()
-        
-        file_picker.pick_files(
+        file_picker.on_result = file_picker_result
+        await file_picker.pick_files(
             dialog_title="Select images to convert to PDF",
             allowed_extensions=["jpg", "jpeg", "png", "bmp", "gif"],
             allow_multiple=True
@@ -274,7 +274,7 @@ def main(page: ft.Page):
                         
                         # Try to fit image to page while maintaining aspect ratio
                         try:
-                            pdf.image(image_path, x=10, y=10, w=190)  # A4 width ≈ 210mm, so 190mm with margins
+                            pdf.image(image_path, x=0, y=0, w=210)  # A4 width ≈ 210mm
                         except Exception as img_error:
                             print(f"Error adding image {image_path}: {img_error}")
                             continue
@@ -319,8 +319,7 @@ def main(page: ft.Page):
     select_button.on_click = select_images
     clear_button.on_click = clear_selection
     convert_button.on_click = convert_to_pdf
-    files_text.on_click = lambda e: show_images_dialog()  # Click to see selected files
-    
+
     # Layout
     page.add(
         ft.Container(
@@ -329,8 +328,8 @@ def main(page: ft.Page):
                     # Header
                     ft.Container(
                         content=title,
-                        alignment=ft.alignment.center,
-                        margin=ft.margin.only(bottom=30)
+                        alignment=ft.Alignment(0, 0),
+                        margin=ft.Margin(bottom=30)
                     ),
                     
                     # Image selection
@@ -343,7 +342,7 @@ def main(page: ft.Page):
                                     bgcolor=ft.Colors.GREY_50,
                                     padding=10,
                                     border_radius=8,
-                                    border=ft.border.all(1, ft.Colors.GREY_300),
+                                    border=ft.Border.all(1, ft.Colors.GREY_300),
                                     width=200
                                 ),
                                 ft.Container(width=10),
@@ -352,13 +351,13 @@ def main(page: ft.Page):
                             ft.Container(height=8),
                             clear_button,
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                        margin=ft.margin.only(bottom=25)
+                        margin=ft.Margin(bottom=25)
                     ),
                     
                     # Filename input
                     ft.Container(
                         content=filename_field,
-                        margin=ft.margin.only(bottom=25)
+                        margin=ft.Margin(bottom=25)
                     ),
                     
                     # Convert button and progress
@@ -368,7 +367,7 @@ def main(page: ft.Page):
                             ft.Container(height=10),
                             progress_ring,
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                        margin=ft.margin.only(bottom=25)
+                        margin=ft.Margin(bottom=25)
                     ),
                     
                     # Status and info
@@ -391,10 +390,10 @@ def main(page: ft.Page):
                     offset=ft.Offset(0, 0),
                 )
             ),
-            alignment=ft.alignment.center,
+            alignment=ft.Alignment(0, 0),
             expand=True,
         )
     )
 
 if __name__ == "__main__":
-    ft.app(main)
+    ft.run(main)

@@ -20,14 +20,16 @@ def create_default_directory():
     
     return default_dir
 
-def main(page: ft.Page):
+async def main(page: ft.Page):
     page.title = "Photo Compressor"
-    page.window_resizable = False
-    page.window.center()
-    page.theme_mode = "light"
+    page.window.resizable = False
+    page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 30
     page.window.height = 700
     page.window.width = 550
+    await page.window.center()
+    file_picker = ft.FilePicker()
+    folder_picker = ft.FilePicker()
     
     # Create UI elements
     title = ft.Text(
@@ -80,10 +82,14 @@ def main(page: ft.Page):
         color=ft.Colors.BLUE_600,
         text_align=ft.TextAlign.CENTER
     )
+
+    def get_selected_quality() -> int:
+        value = quality_slider.value
+        return int(value) if value is not None else 85
     
     # Browse buttons
-    file_browse_button = ft.ElevatedButton(
-        text="Browse File",
+    file_browse_button = ft.Button(
+        content="Browse File",
         width=120,
         height=40,
         style=ft.ButtonStyle(
@@ -93,8 +99,8 @@ def main(page: ft.Page):
         ),
     )
     
-    folder_browse_button = ft.ElevatedButton(
-        text="Browse Folder",
+    folder_browse_button = ft.Button(
+        content="Browse Folder",
         width=120,
         height=40,
         style=ft.ButtonStyle(
@@ -105,8 +111,8 @@ def main(page: ft.Page):
     )
     
     # Compress button
-    compress_button = ft.ElevatedButton(
-        text="Compress",
+    compress_button = ft.Button(
+        content="Compress",
         width=100,
         height=50,
         style=ft.ButtonStyle(
@@ -143,45 +149,40 @@ def main(page: ft.Page):
     
     # Update quality label when slider changes
     def update_quality_label(e):
-        quality_label.value = f"Quality: {int(quality_slider.value)}%"
+        quality_label.value = f"Quality: {get_selected_quality()}%"
         page.update()
     
     quality_slider.on_change = update_quality_label
     
     # File picker functions
-    def pick_file(e):
+    async def pick_file(e):
         def file_picker_result(e: ft.FilePickerResultEvent):
             if e.files:
-                file_field.value = e.files[0].path
-                folder_field.value = ""  # Clear folder field
-                page.update()
+                selected_path = e.files[0].path
+                if selected_path:
+                    file_field.value = selected_path
+                    folder_field.value = ""  # Clear folder field
+                    page.update()
         
-        file_picker = ft.FilePicker(on_result=file_picker_result)
-        page.overlay.append(file_picker)
-        page.update()
-        
-        file_picker.pick_files(
+        file_picker.on_result = file_picker_result
+        await file_picker.pick_files(
             dialog_title="Select an image file",
             allowed_extensions=["jpg", "jpeg", "png", "bmp", "gif"]
         )
     
-    def pick_folder(e):
-        def folder_picker_result(e: ft.FilePickerResultEvent):
-            if e.path:
-                folder_field.value = e.path
-                file_field.value = ""  # Clear file field
-                page.update()
-        
-        folder_picker = ft.FilePicker(on_result=folder_picker_result)
-        page.overlay.append(folder_picker)
-        page.update()
-        
-        folder_picker.get_directory_path(dialog_title="Select a folder")
+    async def pick_folder(e):
+        selected_path = await folder_picker.get_directory_path(
+            dialog_title="Select a folder"
+        )
+        if selected_path:
+            folder_field.value = selected_path
+            file_field.value = ""  # Clear file field
+            page.update()
     
     # Dialog functions
     def close_dialog(dialog):
-        dialog.open = False
-        page.update()
+        if dialog.open:
+            page.pop_dialog()
     
     def show_success_dialog(message, output_path=""):
         success_dialog = ft.AlertDialog(
@@ -199,12 +200,10 @@ def main(page: ft.Page):
                 )
             ], tight=True),
             actions=[
-                ft.TextButton("OK", on_click=lambda e: close_dialog(success_dialog))
+                ft.TextButton(content="OK", on_click=lambda e: close_dialog(success_dialog))
             ],
         )
-        page.dialog = success_dialog
-        success_dialog.open = True
-        page.update()
+        page.show_dialog(success_dialog)
     
     def show_error_dialog(title, message):
         error_dialog = ft.AlertDialog(
@@ -212,16 +211,14 @@ def main(page: ft.Page):
             title=ft.Text(title, color=ft.Colors.RED_600),
             content=ft.Text(message),
             actions=[
-                ft.TextButton("OK", on_click=lambda e: close_dialog(error_dialog))
+                ft.TextButton(content="OK", on_click=lambda e: close_dialog(error_dialog))
             ],
         )
-        page.dialog = error_dialog
-        error_dialog.open = True
-        page.update()
+        page.show_dialog(error_dialog)
     
     # Compression function
     def compress_images(e):
-        quality = int(quality_slider.value)
+        quality = get_selected_quality()
         
         file_path = file_field.value.strip()
         folder_path = folder_field.value.strip()
@@ -379,8 +376,8 @@ def main(page: ft.Page):
                     # Header
                     ft.Container(
                         content=title,
-                        alignment=ft.alignment.center,
-                        margin=ft.margin.only(bottom=30)
+                        alignment=ft.Alignment(0, 0),
+                        margin=ft.Margin(bottom=30)
                     ),
                     
                     # File selection - CAMPO E BOTÃO LADO A LADO
@@ -390,7 +387,7 @@ def main(page: ft.Page):
                             ft.Container(width=10),  # Espaçamento entre campo e botão
                             file_browse_button,
                         ], alignment=ft.MainAxisAlignment.CENTER),
-                        margin=ft.margin.only(bottom=20)
+                        margin=ft.Margin(bottom=20)
                     ),
                     
                     # Folder selection - CAMPO E BOTÃO LADO A LADO
@@ -400,7 +397,7 @@ def main(page: ft.Page):
                             ft.Container(width=10),  # Espaçamento entre campo e botão
                             folder_browse_button,
                         ], alignment=ft.MainAxisAlignment.CENTER),
-                        margin=ft.margin.only(bottom=20)
+                        margin=ft.Margin(bottom=20)
                     ),
                     
                     # Quality setting with slider
@@ -410,7 +407,7 @@ def main(page: ft.Page):
                             ft.Container(height=5),
                             quality_slider,
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                        margin=ft.margin.only(bottom=25)
+                        margin=ft.Margin(bottom=25)
                     ),
                     
                     # Compress button and progress
@@ -420,7 +417,7 @@ def main(page: ft.Page):
                             ft.Container(height=10),
                             progress_ring,
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                        margin=ft.margin.only(bottom=25)
+                        margin=ft.Margin(bottom=25)
                     ),
                     
                     # Status and info
@@ -443,10 +440,10 @@ def main(page: ft.Page):
                     offset=ft.Offset(0, 0),
                 )
             ),
-            alignment=ft.alignment.center,
+            alignment=ft.Alignment(0, 0),
             expand=True,
         )
     )
 
 if __name__ == "__main__":
-    ft.app(main)
+    ft.run(main)

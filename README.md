@@ -1,381 +1,224 @@
 # Python Automation Tools
 
-This repository contains a collection of Python automation tools with **modern Flet-based GUIs** designed to simplify everyday tasks. Each tool features a beautiful, responsive interface built with Google's Material Design principles through the Flet framework.
+A collection of small Python utilities for everyday tasks. Most programs use
+[Flet](https://flet.dev/) for their graphical interface; `notes.py` is a
+command-line tool.
 
-## Installation
+## Requirements
 
-To install all required dependencies, run:
+- Python 3.13 or a version compatible with the installed dependencies;
+- `pip`;
+- Flet 1.0 or newer for the graphical applications;
+- FFmpeg is optional for merging video and audio streams in the YouTube
+  downloader;
+- A RapidAPI key for the jobs search tool.
 
-```bash
+External dependencies are listed in
+[requirements.txt](requirements.txt):
+
+```powershell
 pip install -r requirements.txt
 ```
 
-**Main Requirements:**
-- Python 3.8+
-- Flet 0.21.0+ (Modern GUI framework)
-- Additional libraries as specified in requirements.txt
+`threading`, `hashlib`, `configparser`, `os`, `argparse`, and `difflib` are
+part of Python's standard library and do not need to be installed with `pip`.
 
-## Table of Contents
-
-- [Installation](#installation)
-- [Shutdown Timer](#shutdown-timer)
-- [YouTube Downloader](#youtube-downloader)
-- [Image to PDF Converter](#image-to-pdf-converter)
-- [Photo Compressor](#photo-compressor)
-- [Internet Speed Test](#internet-speed-test)
-- [LinkedIn Jobs Scraper](#linkedin-jobs-scraper)
-- [Plagiarism Checker](#plagiarism-checker)
-- [File Renaming Tool](#file-renaming-tool)
-- [Notes Automator](#notes-automator)
+To upgrade already-installed packages to the newest versions allowed by the
+requirements, run:
 
-## Shutdown Timer
+```powershell
+python -m pip install --upgrade -r requirements.txt
+```
 
-A modern countdown timer application with Material Design interface that automatically initiates system shutdown when the timer reaches zero. Features password-based security and real-time countdown display.
-
-### Key Features
-
-- **Modern Flet GUI** with Material Design elements
-- Configurable countdown timer with slider (1-120 minutes)
-- **Real-time countdown display** with color-coded progress
-- Password protection with secure SHA-256 hashing
-- **Automatic shutdown confirmation** dialog
-- Threaded countdown to prevent UI freezing
-- Settings stored in `shutdown_config.ini`
-- **Responsive design** with centered layout and shadows
+The `>=` constraints intentionally allow newer compatible releases, but
+`pip install -r requirements.txt` does not upgrade a package that is already
+installed. The command above does. GitHub Dependabot is also configured to
+open weekly update pull requests for the dependencies.
 
-### Requirements
+## Tools
 
-- Python 3.8+
-- Flet framework
-- Built-in modules: `os`, `time`, `threading`, `hashlib`, `configparser`
-
-### Usage
+### `auto_shutdown.py` — shutdown timer
 
-1. Run the script:
-   ```bash
-   python auto_shutdown.py
-   ```
-2. Set desired time using the intuitive slider interface
-3. Click "Start Timer" to begin countdown with visual feedback
-4. To stop: click "Stop Timer" and enter password (default: "pass")
-5. **New**: Visual countdown with color transitions (green → orange → red)
+A Flet application that starts a countdown and shuts down the computer when
+the countdown ends. Press **Stop Timer** to cancel the countdown and any
+scheduled shutdown immediately; no password is required. The program uses
+`shutdown_config.ini` to store the default time and shutdown settings.
 
-### Configuration
+```powershell
+python auto_shutdown.py
+```
 
-- Password and default timer settings stored in `shutdown_config.ini`
-- Default password: "pass" (can be modified in config file)
-- Customizable default countdown time
-
-## YouTube Downloader
-
-A modern GUI application for downloading YouTube videos with adaptive quality selection and FFmpeg integration. Built with Flet for a responsive, Material Design interface.
+The interface accepts values between 1 and 120 minutes. The shutdown
+operation depends on the operating system and should be used carefully,
+because it may interrupt unsaved work.
 
-### Key Features
-
-- **Modern Flet interface** with Material Design elements
-- Downloads videos in maximum available quality (up to 1080p with FFmpeg)
-- **FFmpeg detection and integration** for adaptive stream merging
-- **Progress tracking** with real-time download status
-- Custom download directory selection
-- **Threaded downloads** to prevent UI freezing
-- URL validation and video info display
-- **Responsive design** with clean, centered layout
+When the countdown reaches zero, the application asks for confirmation before
+starting the system shutdown. If a shutdown has already been scheduled, use
+**Stop Timer** to cancel it.
 
-### Requirements
+### `youtube_downloader.py` — YouTube downloader
 
-- Python 3.8+
-- Flet framework
-- `pytubefix` library
-- FFmpeg (optional, for maximum quality up to 1080p)
+Downloads videos using `pytubefix`. The application attempts to use adaptive
+streams up to 1080p and merge them with audio when FFmpeg is available.
+Without FFmpeg, it is limited to the available progressive streams.
 
-### Usage
+```powershell
+python youtube_downloader.py
+```
 
-1. Run the script:
-   ```bash
-   python youtube_downloader.py
-   ```
-2. Paste a valid YouTube video URL
-3. Click "Info" to view video details and available streams
-4. Click "Download Video" and monitor progress
-5. Videos saved to Downloads/Youtube Videos (or custom location)
+By default, files are saved to:
 
-### Notes
+```text
+C:\Users\<user>\Downloads\Youtube Videos
+```
 
-- FFmpeg status indicator shows availability (green checkmark)
-- With FFmpeg: Downloads up to 1080p using adaptive streams
-- Without FFmpeg: Limited to progressive streams (typically 720p)
+The program allows you to select another directory through the interface.
+Use it only for content you are authorized to download and in accordance
+with the service's terms of use.
 
-## Image to PDF Converter
+### `image_to_pdf.py` — images to PDF
 
-A streamlined tool for converting multiple image files into a single PDF document with an intuitive Flet-based interface.
+Converts multiple images into a single PDF. It accepts `JPG`, `JPEG`, `PNG`,
+`BMP`, and `GIF`, and allows you to choose the output filename.
 
-### Key Features
+```powershell
+python image_to_pdf.py
+```
 
-- **Modern Flet GUI** with drag-and-drop feel
-- **Multiple image selection** at once
-- Supports JPG, JPEG, and PNG formats
-- **Automatic page sizing** and positioning
-- Real-time conversion feedback
-- **Material Design** file selection dialogs
+The default output directory is:
 
-### Requirements
+```text
+C:\Users\<user>\Downloads\Image to PDF Files
+```
 
-- Python 3.8+
-- Flet framework
-- fpdf2 library
+### `photo_compressor.py` — photo compressor
 
-### Usage
+Compresses a single image or all images in a folder. It accepts `JPG`,
+`JPEG`, `PNG`, `BMP`, and `GIF`, allows you to choose a quality value between
+1% and 100%, and saves the results as JPEG files with the `_compressed`
+suffix.
 
-1. Run the script:
-   ```bash
-   python image_to_pdf.py
-   ```
-2. Click "Browse Files" to select multiple images
-3. Click "Convert to PDF" to process
-4. PDF saved as "image_to_pdf_result.pdf"
+```powershell
+python photo_compressor.py
+```
 
-## Photo Compressor
+The default output directory is:
 
-A powerful image compression tool with quality controls and batch processing capabilities, featuring a modern Flet interface.
+```text
+C:\Users\<user>\Downloads\Compressed Photos
+```
 
-### Key Features
+### `internet_speed_test.py` — speed test
 
-- **Modern Flet GUI** with intuitive controls
-- **Quality slider** for precise compression control (1-100%)
-- **File and folder selection** options
-- **Batch processing** with progress tracking
-- **Multiple format support** (JPG, JPEG, PNG, BMP, GIF)
-- **Threaded compression** for responsive UI
-- **Automatic RGB conversion** for optimal output
-- **Real-time progress updates** and statistics
+Measures download, upload, and ping using `speedtest-cli`, and displays the
+ISP and selected server.
 
-### Requirements
+```powershell
+python internet_speed_test.py
+```
 
-- Python 3.8+
-- Flet framework
-- Pillow (PIL) library
+An Internet connection is required. Results may vary depending on the
+selected server and network conditions.
 
-### Usage
+### `linkedin_jobs.py` — jobs search
 
-1. Run the script:
-   ```bash
-   python photo_compressor.py
-   ```
-2. Select single image or entire folder
-3. Adjust quality using the slider
-4. Click "Compress" and monitor progress
-5. Compressed images saved to dedicated output folder
+Queries the JSearch API through RapidAPI and searches for remote and
+on-site jobs. The country is determined from the name entered in the
+interface.
 
-### Output
+```powershell
+python linkedin_jobs.py
+```
 
-- Default location: `C:\Users\jpagu\Downloads\Compressed Photos`
-- Files saved with "_compressed" suffix
-- All images converted to JPEG format
+A valid RapidAPI key for the JSearch endpoint is required. The key should be
+provided through an environment variable or a secure configuration mechanism;
+do not publish API keys in source code.
 
-## Internet Speed Test
+Results are written to `.txt` files in:
 
-A clean, modern internet speed testing tool with real-time results display built using Flet's responsive interface.
+```text
+C:\Users\<user>\Downloads\LinkedIn Jobs
+```
 
-### Key Features
+### `rename_random.py` — file renamer
 
-- **Modern Flet interface** with live results
-- **Real-time speed measurement** display
-- Download, upload, and ping testing
-- **Automatic server selection** for optimal testing
-- **ISP and server information** display
-- **Responsive design** with progress indicators
+Renames files in a folder with random 8-character alphanumeric names while
+preserving their extensions. It can also process subfolders.
 
-### Requirements
+```powershell
+python rename_random.py
+```
 
-- Python 3.8+
-- Flet framework
-- speedtest-cli library
+By default, the interface starts with the current user's `Pictures` folder,
+but another folder can be selected. This operation changes file names and
+does not provide an undo function; create a backup before running it.
 
-### Usage
+### `notes.py` — note creator
 
-1. Run the script:
-   ```bash
-   python internet_speed_test.py
-   ```
-2. Click "Start Test" to begin speed measurement
-3. View real-time results for download/upload speeds
-4. Results include ping, ISP info, and server location
+A command-line tool that creates a folder and a file with the extension
+corresponding to the selected type. On Windows, macOS, and Linux, it attempts
+to open the file in the system's default editor.
 
-## LinkedIn Jobs Scraper
+Syntax:
 
-An automated job search tool with modern interface for finding remote and on-site positions using the JSearch API.
-
-### Key Features
-
-- **Modern Flet GUI** with search controls
-- **Multi-country job search** with auto-detection
-- **Remote and on-site position filtering**
-- **Multiple employment types** (full-time, part-time, internships)
-- **Duplicate removal** and result organization
-- **Real-time search progress** and status updates
-- **Export functionality** to text files
-
-### Requirements
-
-- Python 3.8+
-- Flet framework
-- requests library
-- Valid RapidAPI key for JSearch API
-
-### Usage
-
-1. Update API key in script
-2. Run the script:
-   ```bash
-   python linkedin_jobs.py
-   ```
-3. Enter job title and select country
-4. Click "Search Jobs" and monitor progress
-5. Results saved to "linkedin_jobs_result.txt"
-
-### Configuration
-
-- Requires RapidAPI key for JSearch API
-- Supports multiple countries with automatic code detection
-- Configurable search parameters and filters
-
-## Plagiarism Checker
-
-A text similarity analyzer with modern interface for comparing documents and detecting potential plagiarism.
-
-### Key Features
-
-- **Modern Flet interface** for file selection
-- **Dual file comparison** with similarity percentage
-- **SequenceMatcher algorithm** for accurate analysis
-- **Encoding error handling** for various text formats
-- **Real-time analysis** with progress feedback
-- **Clear results display** with percentage breakdown
-
-### Requirements
-
-- Python 3.8+
-- Flet framework
-- Built-in difflib module
-
-### Usage
-
-1. Run the script:
-   ```bash
-   python plagiarism_checker.py
-   ```
-2. Select first file using "Browse" button
-3. Select second file for comparison
-4. Click "Check Similarity" to analyze
-5. View similarity percentage and analysis
-
-## File Renaming Tool
-
-A utility for bulk file renaming with random alphanumeric names, featuring a clean Flet interface with safety features.
-
-### Key Features
-
-- **Modern Flet GUI** with intuitive controls
-- **Random name generation** (fixed 8-character length)
-- **Extension preservation** for all file types
-- **Recursive folder processing** option
-- **Collision prevention** with duplicate checking
-- **Real-time file counting** and preview
-- **Threaded operations** for responsive UI
-- **Default folder setup** (C:\Users\jpagu\Pictures)
-
-### Requirements
-
-- Python 3.8+
-- Flet framework
-- Built-in modules: `os`, `random`, `string`, `threading`
-
-### Usage
-
-1. Run the script:
-   ```bash
-   python rename_random.py
-   ```
-2. Select target folder (defaults to Pictures)
-3. Enable recursive processing if needed
-4. Click "Rename Files" to process
-5. All files renamed with 8-character random names
-
-### Safety Features
-
-- **File count preview** before operation
-- **Extension preservation** to maintain file types
-- **Collision detection** to prevent overwrites
-- **Progress feedback** during batch operations
-
-## Notes Automator
-
-A productivity tool for creating organized note files with language-specific templates and automatic folder organization.
-
-### Core Features
-
-- **File template system** for 16+ programming languages
-- **Automatic folder organization** and creation
-- **Cross-platform editor integration** (Windows, macOS, Linux)
-- **Command-line interface** with flexible options
-- **Language-specific extensions** and templates
-
-### Supported Languages
-
-| Language/Type | Extension | Command |
-|---------------|-----------|---------|
-| Ruby          | `.rb`     | `ruby`  |
-| PHP           | `.php`    | `php`   |
-| JavaScript    | `.js`     | `javascript` |
-| TypeScript    | `.ts`     | `typescript` |
-| Python        | `.py`     | `python` |
-| Java          | `.java`   | `java`  |
-| Dart          | `.dart`   | `dart`  |
-| Plain Text    | `.txt`    | `text`  |
-| XML           | `.xml`    | `xml`   |
-| HTML          | `.html`   | `html`  |
-| CSS           | `.css`    | `css`   |
-| JSON          | `.json`   | `json`  |
-| C             | `.c`      | `c`     |
-| C++           | `.cpp`    | `cpp`   |
-| C#            | `.cs`     | `csharp` |
-| SQL           | `.sql`    | `sql`   |
-
-### Requirements
-
-- Python 3.8+
-- No external dependencies required
-
-### Usage
-
-```bash
-python notes.py -e EXTENSION -f FOLDER -n FILENAME [-t]
+```powershell
+python notes.py -e EXTENSION -f FOLDER -n NAME [-t]
 ```
 
 Options:
-- `-e, --extension`: Language/file type from supported list
-- `-f, --folder`: Organization folder name
-- `-n, --name`: Note filename (without extension)
-- `-t, --no-template`: Create empty file (skip template)
 
-### Examples
+- `-e, --extension`: file type;
+- `-f, --folder`: folder where the file will be created;
+- `-n, --name`: filename without the extension;
+- `-t, --no-template`: create an empty file instead of using a template.
 
-```bash
-# Create Python note with template
+Available types:
+
+```text
+ruby, php, javascript, typescript, python, java, dart, text,
+xml, html, css, json, c, cpp, csharp, sql
+```
+
+Examples:
+
+```powershell
 python notes.py -e python -f projects -n todo_app
-
-# Create empty text file
 python notes.py -e text -f documents -n notes -t
 ```
 
----
+Templates are available for Python, HTML, JavaScript, and Java. Other
+formats are created empty when no template is defined.
 
-## Technology Stack
+## Known limitations
 
-All applications in this repository utilize:
+- Programs with graphical interfaces use several Windows-specific default
+  paths, such as `C:\Users\<user>\Downloads`. Compatibility with macOS and
+  Linux is not guaranteed for every tool.
+- Output directories are created automatically when needed.
+- Graphical interfaces run time-consuming operations in threads to avoid
+  blocking the window, but performance depends on the system, network, and
+  files being processed.
+- The JSearch API and content downloads depend on external services that may
+  change or become unavailable.
 
-- **Frontend**: Flet (Python) with Material Design
-- **Architecture**: Threaded operations for responsive UI
-- **File Operations**: Built-in Python libraries
-- **Configuration**: INI files and local storage
-- **Cross-Platform**: Windows, macOS, Linux support
+## Main structure
+
+```text
+auto_shutdown.py          Shutdown timer
+youtube_downloader.py     YouTube downloader
+image_to_pdf.py           Image-to-PDF converter
+photo_compressor.py       Image compressor
+internet_speed_test.py    Speed test
+linkedin_jobs.py          Jobs search
+plagiarism_checker.py     Text comparison
+rename_random.py          File renamer
+notes.py                  CLI note creator
+shutdown_config.ini       Shutdown timer configuration
+requirements.txt          External dependencies
+```
+
+## Development
+
+Python and pytest caches are ignored by
+[.gitignore](.gitignore). Run the programs using the same Python environment
+where the dependencies were installed.

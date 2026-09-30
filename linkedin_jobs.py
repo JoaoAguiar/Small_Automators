@@ -37,14 +37,14 @@ def obter_codigo_pais(localizacao):
     localizacao = localizacao.strip().lower()
     
     paises = {
-        "portugal": "pt", "espanha": "es", "frança": "fr", "france": "fr", "alemanha": "de", "germany": "de",
-        "itália": "it", "italia": "it", "italy": "it", "reino unido": "gb", "united kingdom": "gb", "uk": "gb",
-        "irlanda": "ie", "ireland": "ie", "holanda": "nl", "netherlands": "nl", "bélgica": "be", "belgica": "be", "belgium": "be",
-        "suíça": "ch", "suica": "ch", "switzerland": "ch", "austria": "at", "polônia": "pl", "polonia": "pl", "poland": "pl",
-        "noruega": "no", "norway": "no", "suécia": "se", "suecia": "se", "sweden": "se", "finlândia": "fi", "finlandia": "fi", "finland": "fi",
+        "portugal": "pt", "espanha": "es", "franÃ§a": "fr", "france": "fr", "alemanha": "de", "germany": "de",
+        "itÃ¡lia": "it", "italia": "it", "italy": "it", "reino unido": "gb", "united kingdom": "gb", "uk": "gb",
+        "irlanda": "ie", "ireland": "ie", "holanda": "nl", "netherlands": "nl", "bÃ©lgica": "be", "belgica": "be", "belgium": "be",
+        "suÃ­Ã§a": "ch", "suica": "ch", "switzerland": "ch", "austria": "at", "polÃ´nia": "pl", "polonia": "pl", "poland": "pl",
+        "noruega": "no", "norway": "no", "suÃ©cia": "se", "suecia": "se", "sweden": "se", "finlÃ¢ndia": "fi", "finlandia": "fi", "finland": "fi",
         "estados unidos": "us", "united states": "us", "usa": "us",
-        "canadá": "ca", "canada": "ca",
-        "austrália": "au", "australia": "au"
+        "canadÃ¡": "ca", "canada": "ca",
+        "austrÃ¡lia": "au", "australia": "au"
     }
 
     for nome, codigo in paises.items():
@@ -53,27 +53,29 @@ def obter_codigo_pais(localizacao):
         
     return None
 
-def create_output_directory():
-    default_dir = r"C:\Users\jpagu\Downloads\LinkedIn Jobs"
+def create_output_directory() -> str | None:
+    default_dir = os.path.join(
+        os.path.expanduser("~"), "Downloads", "LinkedIn Jobs"
+    )
 
     if not os.path.exists(default_dir):
         try:
             os.makedirs(default_dir)
     
             return default_dir
-        except Exception as e:
+        except OSError:
             return None
     
     return default_dir
 
-def main(page: ft.Page):
+async def main(page: ft.Page):
     page.title = "LinkedIn Job Search"
-    page.window_resizable = False
-    page.window.center()
-    page.theme_mode = "light"
+    page.window.resizable = False
+    page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 30
     page.window.height = 575
     page.window.width = 500
+    await page.window.center()
     # page.window_icon = r"C:\caminho\para\seu\icon.ico"
     
     # Create UI elements
@@ -104,8 +106,8 @@ def main(page: ft.Page):
         focused_border_color=ft.Colors.BLUE_600,
     )
 
-    search_button = ft.ElevatedButton(
-        text="Search Jobs",
+    search_button = ft.Button(
+        content="Search Jobs",
         width=100,
         height=50,
         style=ft.ButtonStyle(
@@ -138,8 +140,8 @@ def main(page: ft.Page):
     )
         
     def close_dialog(dialog):
-        dialog.open = False
-        page.update()
+        if dialog.open:
+            page.pop_dialog()
 
     def show_success_dialog(message, file_path):
         success_dialog = ft.AlertDialog(
@@ -157,12 +159,21 @@ def main(page: ft.Page):
                 )
             ], tight=True),
             actions=[
-                ft.TextButton("OK", on_click=lambda e: close_dialog(success_dialog))
+                ft.TextButton(content="OK", on_click=lambda e: close_dialog(success_dialog))
             ],
         )
-        page.dialog = success_dialog
-        success_dialog.open = True
-        page.update()
+        page.show_dialog(success_dialog)
+
+    def show_error_dialog(title, message):
+        error_dialog = ft.AlertDialog(
+            modal=True,
+            title=ft.Text(title, color=ft.Colors.RED_600),
+            content=ft.Text(message),
+            actions=[
+                ft.TextButton(content="OK", on_click=lambda e: close_dialog(error_dialog))
+            ],
+        )
+        page.show_dialog(error_dialog)
     
     def search_jobs(e):
         titulo = job_title_field.value.strip()
@@ -173,6 +184,12 @@ def main(page: ft.Page):
             return
         
         output_dir = create_output_directory()
+        if output_dir is None:
+            show_error_dialog(
+                "Error",
+                "The results directory could not be created.",
+            )
+            return
         
         # Update UI for searching
         search_button.disabled = True
@@ -202,8 +219,8 @@ def main(page: ft.Page):
                         
                         for i, vaga in enumerate(vagas_encontradas, 1):
                             f.write(f"{i}. {vaga[0]} at {vaga[1]}\n")
-                            f.write(f"   📍 {vaga[2]}, {vaga[3]}\n")
-                            f.write(f"   🔗 {vaga[4]}\n\n")
+                            f.write(f"   ðŸ“ {vaga[2]}, {vaga[3]}\n")
+                            f.write(f"   ðŸ”— {vaga[4]}\n\n")
                     
                     def update_ui_success():
                         progress_ring.visible = False
@@ -250,8 +267,8 @@ def main(page: ft.Page):
                     # Header
                     ft.Container(
                         content=title,
-                        alignment=ft.alignment.center,
-                        margin=ft.margin.only(bottom=30)
+                        alignment=ft.Alignment(0, 0),
+                        margin=ft.Margin(bottom=30)
                     ),
                     
                     # Input fields
@@ -261,7 +278,7 @@ def main(page: ft.Page):
                             ft.Container(height=5),
                             country_field,
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                        margin=ft.margin.only(bottom=25)
+                        margin=ft.Margin(bottom=25)
                     ),
                     
                     # Search button and progress
@@ -271,7 +288,7 @@ def main(page: ft.Page):
                             ft.Container(height=10),
                             progress_ring,
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                        margin=ft.margin.only(bottom=25)
+                        margin=ft.Margin(bottom=25)
                     ),
                     
                     # Status and info
@@ -294,10 +311,10 @@ def main(page: ft.Page):
                     offset=ft.Offset(0, 0),
                 )
             ),
-            alignment=ft.alignment.center,  
+            alignment=ft.Alignment(0, 0),
             expand=True,                   
         )
     )
 
 if __name__ == "__main__":
-    ft.app(main)
+    ft.run(main)
