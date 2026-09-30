@@ -8,7 +8,7 @@ pytubefix>=6.0.0
 fpdf2>=2.7.6
 
 # Photo compressor dependencies
-Pillow>=10.0.0
+Pillow>=12.3.0
 
 # Internet speed test dependencies
 speedtest-cli>=2.1.3
