@@ -2,7 +2,7 @@
 flet>=1.0.0
 
 # YouTube Downloader dependencies
-pytubefix>=6.0.0
+pytubefix>=11.1.0
 
 # Image to PDF converter dependencies
 fpdf2>=2.7.6
