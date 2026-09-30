@@ -1,5 +1,5 @@
 # Core GUI Framework
-flet>=1.0.0
+flet>=1.0.1
 
 # YouTube Downloader dependencies
 pytubefix>=6.0.0
